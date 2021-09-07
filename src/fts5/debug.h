@@ -1,8 +1,6 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
-#define SQLITE_TOKENIZER_DEBUG
-
 #ifdef SQLITE_TOKENIZER_DEBUG
 #include <stdio.h>
 #define log_error(...) fprintf(stderr, __VA_ARGS__)
