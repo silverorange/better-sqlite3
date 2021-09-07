@@ -111,6 +111,8 @@ public:
 			for (Backup* backup : backups) backup->CloseHandles();
 			stmts.clear();
 			backups.clear();
+			synonyms_context_delete(synonyms_context);
+			stopwords_context_delete(stopwords_context);
 			int status = sqlite3_close(db_handle);
 			assert(status == SQLITE_OK); ((void)status);
 		}
@@ -127,10 +129,14 @@ private:
 		v8::Isolate* isolate,
 		Addon* addon,
 		sqlite3* db_handle,
+		SynonymsTokenizerCreateContext* synonyms_context,
+		StopwordsTokenizerCreateContext* stopwords_context,
 		v8::Local<v8::Value> logger
 	) :
 		node::ObjectWrap(),
 		db_handle(db_handle),
+		synonyms_context(synonyms_context),
+		stopwords_context(stopwords_context),
 		open(true),
 		busy(false),
 		safe_ints(false),
@@ -161,6 +167,8 @@ private:
 		UseIsolate;
 		sqlite3* db_handle;
 		fts5_api* fts_api;
+		SynonymsTokenizerCreateContext* synonyms_context;
+		StopwordsTokenizerCreateContext* stopwords_context;
 		v8::String::Utf8Value utf8(isolate, filename);
 		int mask = readonly ? SQLITE_OPEN_READONLY
 			: must_exist ? SQLITE_OPEN_READWRITE
@@ -176,6 +184,39 @@ private:
 		fts_api = fts5_api_from_db(db_handle);
 		if (fts_api == NULL) {
 			ThrowSqliteError(addon, "Unable to get FTS5 API", SQLITE_ERROR);
+			int status = sqlite3_close(db_handle);
+			assert(status == SQLITE_OK); ((void)status);
+			return;
+		}
+
+		static fts5_tokenizer synonyms_tokenizer = {
+			.xCreate = synonyms_tokenizer_create,
+			.xDelete = synonyms_tokenizer_delete,
+			.xTokenize = synonyms_tokenizer_tokenize
+		};
+
+		// Register synonyms tokeinzer.
+		synonyms_context_create(db_handle, fts_api, &synonyms_context);
+		if (fts_api->xCreateTokenizer(fts_api, "synonyms", (void *)synonyms_context, &synonyms_tokenizer, 0) != SQLITE_OK) {
+			ThrowSqliteError(addon, "Unable to create synonyms tokenizer", SQLITE_ERROR);
+			synonyms_context_delete(synonyms_context);
+			int status = sqlite3_close(db_handle);
+			assert(status == SQLITE_OK); ((void)status);
+			return;
+		}
+
+		static fts5_tokenizer stopwords_tokenizer = {
+			.xCreate = stopwords_tokenizer_create,
+			.xDelete = stopwords_tokenizer_delete,
+			.xTokenize = stopwords_tokenizer_tokenize
+		};
+
+		// Register stopwords tokenizer.
+		stopwords_context_create(db_handle, fts_api, &stopwords_context);
+		if (fts_api->xCreateTokenizer(fts_api, "stopwords", (void *)stopwords_context, &stopwords_tokenizer, 0) != SQLITE_OK) {
+			ThrowSqliteError(addon, "Unable to create stopwords tokenizer", SQLITE_ERROR);
+			stopwords_context_delete(stopwords_context);
+			synonyms_context_delete(synonyms_context);
 			int status = sqlite3_close(db_handle);
 			assert(status == SQLITE_OK); ((void)status);
 			return;
@@ -198,7 +239,7 @@ private:
 		}
 
 		UseContext;
-		Database* db = new Database(isolate, addon, db_handle, logger);
+		Database* db = new Database(isolate, addon, db_handle, synonyms_context, stopwords_context, logger);
 		db->Wrap(info.This());
 		SetFrozen(isolate, ctx, info.This(), addon->cs.memory, v8::Boolean::New(isolate, in_memory));
 		SetFrozen(isolate, ctx, info.This(), addon->cs.readonly, v8::Boolean::New(isolate, readonly));
@@ -463,6 +504,8 @@ private:
 	static const int MAX_STRING_SIZE = v8::String::kMaxLength > INT_MAX ? INT_MAX : static_cast<int>(v8::String::kMaxLength);
 
 	sqlite3* const db_handle;
+	SynonymsTokenizerCreateContext* const synonyms_context;
+	StopwordsTokenizerCreateContext* const stopwords_context;
 	bool open;
 	bool busy;
 	bool safe_ints;
