@@ -160,6 +160,7 @@ private:
 		UseAddon;
 		UseIsolate;
 		sqlite3* db_handle;
+		fts5_api* fts_api;
 		v8::String::Utf8Value utf8(isolate, filename);
 		int mask = readonly ? SQLITE_OPEN_READONLY
 			: must_exist ? SQLITE_OPEN_READWRITE
@@ -167,6 +168,14 @@ private:
 
 		if (sqlite3_open_v2(*utf8, &db_handle, mask, NULL) != SQLITE_OK) {
 			ThrowSqliteError(addon, db_handle);
+			int status = sqlite3_close(db_handle);
+			assert(status == SQLITE_OK); ((void)status);
+			return;
+		}
+
+		fts_api = fts5_api_from_db(db_handle);
+		if (fts_api == NULL) {
+			ThrowSqliteError(addon, "Unable to get FTS5 API", SQLITE_ERROR);
 			int status = sqlite3_close(db_handle);
 			assert(status == SQLITE_OK); ((void)status);
 			return;
