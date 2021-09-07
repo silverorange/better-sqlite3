@@ -29,6 +29,7 @@
           'SQLITE_MEMDEBUG',
           'SQLITE_ENABLE_API_ARMOR',
           'SQLITE_WIN32_MALLOC_VALIDATE',
+          'SQLITE_TOKENIZER_DEBUG',
         ],
         'cflags': [
           '-O0',
