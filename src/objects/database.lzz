@@ -250,7 +250,7 @@ private:
 		phrases_context_create(db_handle, fts_api, &phrases_context);
 		if (fts_api->xCreateTokenizer(fts_api, "phrases", (void *)phrases_context, &phrases_tokenizer, 0) != SQLITE_OK) {
 			ThrowSqliteError(addon, "Unable to create phrases tokenizer", SQLITE_ERROR);
-			phrases_context_delete(stopwords_context);
+			phrases_context_delete(phrases_context);
 			stopwords_context_delete(stopwords_context);
 			synonyms_context_delete(synonyms_context);
 			int status = sqlite3_close(db_handle);
