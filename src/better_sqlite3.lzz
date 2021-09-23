@@ -16,6 +16,7 @@
 #include "fts5/stopwords.h"
 #include "fts5/synonyms.h"
 #include "fts5/phrases.h"
+#include "fts5/unicode2.h"
 #include "fts5/unicode.h"
 #include <node.h>
 #include <node_object_wrap.h>
