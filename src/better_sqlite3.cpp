@@ -2,45 +2,6 @@
 //
 
 #include "better_sqlite3.hpp"
-#line 154 "./src/util/macros.lzz"
-void SetPrototypeGetter(
-	v8::Isolate* isolate,
-	v8::Local<v8::External> data,
-	v8::Local<v8::FunctionTemplate> recv,
-	const char* name,
-	v8::AccessorNameGetterCallback func
-) {
-	v8::HandleScope scope(isolate);
-
-	#if defined NODE_MODULE_VERSION && NODE_MODULE_VERSION < 121
-	recv->InstanceTemplate()->SetAccessor(
-		InternalizedFromLatin1(isolate, name),
-		func,
-		0,
-		data,
-		v8::AccessControl::DEFAULT,
-		v8::PropertyAttribute::None
-	);
-	#else
-	recv->InstanceTemplate()->SetNativeDataProperty(
-		InternalizedFromLatin1(isolate, name),
-		func,
-		0,
-		data
-	);
-	#endif
-}
-#line 184 "./src/util/macros.lzz"
-#ifndef V8_COMPRESS_POINTERS_IN_SHARED_CAGE
-#define SAFE_NEW_BUFFER(env, data, length, finalizeCallback, finalizeHint) node::Buffer::New(env, data, length, finalizeCallback, finalizeHint)
-#else
-static inline v8::MaybeLocal<v8::Object> BufferSandboxNew(v8::Isolate* isolate, char* data, size_t length, void (*finalizeCallback)(char*, void*), void* finalizeHint) {
-	v8::MaybeLocal<v8::Object> buffer = node::Buffer::Copy(isolate, data, length);
-	finalizeCallback(data, finalizeHint);
-	return buffer;
-}
-#define SAFE_NEW_BUFFER(env, data, length, finalizeCallback, finalizeHint) BufferSandboxNew(env, data, length, finalizeCallback, finalizeHint)
-#endif
 #line 39 "./src/util/binder.lzz"
 	static bool IsPlainObject(v8::Isolate* isolate, v8::Local<v8::Object> obj) {
 		v8::Local<v8::Value> proto = obj->GetPrototype();
@@ -56,7 +17,15 @@ static inline v8::MaybeLocal<v8::Object> BufferSandboxNew(v8::Isolate* isolate, 
 		ctx->Exit();
 		return proto->StrictEquals(baseProto) || proto->StrictEquals(v8::Null(isolate));
 	}
-#line 67 "./src/better_sqlite3.lzz"
+#line 77 "./src/better_sqlite3.lzz"
+#include "fts5/fts5.c"
+#include "fts5/meta.c"
+#include "fts5/stopwords.c"
+#include "fts5/synonyms.c"
+#include "fts5/phrases.c"
+#include "fts5/unicode.c"
+#include "fts5/unicode2.c"
+
 NODE_MODULE_INIT(/* exports, context */) {
 	v8::Isolate* isolate = context->GetIsolate();
 	v8::HandleScope scope(isolate);
@@ -103,33 +72,33 @@ namespace Data
 #line 70 "./src/util/data.lzz"
   static char const RAW = 3;
 }
-#line 38 "./src/util/macros.lzz"
+#line 37 "./src/util/macros.lzz"
 void ThrowError (char const * message)
-#line 38 "./src/util/macros.lzz"
+#line 37 "./src/util/macros.lzz"
                                      { v8 :: Isolate * isolate = v8 :: Isolate :: GetCurrent ( ) ; isolate->ThrowException(v8::Exception::Error(StringFromUtf8(isolate, message, -1)));
 }
-#line 39 "./src/util/macros.lzz"
+#line 38 "./src/util/macros.lzz"
 void ThrowTypeError (char const * message)
-#line 39 "./src/util/macros.lzz"
+#line 38 "./src/util/macros.lzz"
                                          { v8 :: Isolate * isolate = v8 :: Isolate :: GetCurrent ( ) ; isolate->ThrowException(v8::Exception::TypeError(StringFromUtf8(isolate, message, -1)));
 }
-#line 40 "./src/util/macros.lzz"
+#line 39 "./src/util/macros.lzz"
 void ThrowRangeError (char const * message)
-#line 40 "./src/util/macros.lzz"
+#line 39 "./src/util/macros.lzz"
                                           { v8 :: Isolate * isolate = v8 :: Isolate :: GetCurrent ( ) ; isolate->ThrowException(v8::Exception::RangeError(StringFromUtf8(isolate, message, -1)));
 }
-#line 106 "./src/util/macros.lzz"
+#line 105 "./src/util/macros.lzz"
 v8::Local <v8::FunctionTemplate> NewConstructorTemplate (v8::Isolate * isolate, v8::Local <v8::External> data, v8::FunctionCallback func, char const * name)
-#line 111 "./src/util/macros.lzz"
+#line 110 "./src/util/macros.lzz"
   {
         v8::Local<v8::FunctionTemplate> t = v8::FunctionTemplate::New(isolate, func, data);
         t->InstanceTemplate()->SetInternalFieldCount(1);
         t->SetClassName(InternalizedFromLatin1(isolate, name));
         return t;
 }
-#line 117 "./src/util/macros.lzz"
+#line 116 "./src/util/macros.lzz"
 void SetPrototypeMethod (v8::Isolate * isolate, v8::Local <v8::External> data, v8::Local <v8::FunctionTemplate> recv, char const * name, v8::FunctionCallback func)
-#line 123 "./src/util/macros.lzz"
+#line 122 "./src/util/macros.lzz"
   {
         v8::HandleScope scope(isolate);
         recv->PrototypeTemplate()->Set(
@@ -137,14 +106,28 @@ void SetPrototypeMethod (v8::Isolate * isolate, v8::Local <v8::External> data, v
                 v8::FunctionTemplate::New(isolate, func, data, v8::Signature::New(isolate, recv))
         );
 }
-#line 130 "./src/util/macros.lzz"
+#line 129 "./src/util/macros.lzz"
 void SetPrototypeSymbolMethod (v8::Isolate * isolate, v8::Local <v8::External> data, v8::Local <v8::FunctionTemplate> recv, v8::Local <v8::Symbol> symbol, v8::FunctionCallback func)
-#line 136 "./src/util/macros.lzz"
+#line 135 "./src/util/macros.lzz"
   {
         v8::HandleScope scope(isolate);
         recv->PrototypeTemplate()->Set(
                 symbol,
                 v8::FunctionTemplate::New(isolate, func, data, v8::Signature::New(isolate, recv))
+        );
+}
+#line 142 "./src/util/macros.lzz"
+void SetPrototypeGetter (v8::Isolate * isolate, v8::Local <v8::External> data, v8::Local <v8::FunctionTemplate> recv, char const * name, v8::AccessorGetterCallback func)
+#line 148 "./src/util/macros.lzz"
+  {
+        v8::HandleScope scope(isolate);
+        recv->InstanceTemplate()->SetAccessor(
+                InternalizedFromLatin1(isolate, name),
+                func,
+                0,
+                data,
+                v8::AccessControl::DEFAULT,
+                v8::PropertyAttribute::None
         );
 }
 #line 4 "./src/util/constants.lzz"
@@ -209,10 +192,6 @@ CS::CS (v8::Isolate * isolate)
                 SetCode(isolate, SQLITE_WARNING, "SQLITE_WARNING");
                 SetCode(isolate, SQLITE_ROW, "SQLITE_ROW");
                 SetCode(isolate, SQLITE_DONE, "SQLITE_DONE");
-
-                SetCode(isolate, SQLITE_ERROR_MISSING_COLLSEQ, "SQLITE_ERROR_MISSING_COLLSEQ");
-                SetCode(isolate, SQLITE_ERROR_RETRY, "SQLITE_ERROR_RETRY");
-                SetCode(isolate, SQLITE_ERROR_SNAPSHOT, "SQLITE_ERROR_SNAPSHOT");
                 SetCode(isolate, SQLITE_IOERR_READ, "SQLITE_IOERR_READ");
                 SetCode(isolate, SQLITE_IOERR_SHORT_READ, "SQLITE_IOERR_SHORT_READ");
                 SetCode(isolate, SQLITE_IOERR_WRITE, "SQLITE_IOERR_WRITE");
@@ -241,31 +220,18 @@ CS::CS (v8::Isolate * isolate)
                 SetCode(isolate, SQLITE_IOERR_CONVPATH, "SQLITE_IOERR_CONVPATH");
                 SetCode(isolate, SQLITE_IOERR_VNODE, "SQLITE_IOERR_VNODE");
                 SetCode(isolate, SQLITE_IOERR_AUTH, "SQLITE_IOERR_AUTH");
-                SetCode(isolate, SQLITE_IOERR_BEGIN_ATOMIC, "SQLITE_IOERR_BEGIN_ATOMIC");
-                SetCode(isolate, SQLITE_IOERR_COMMIT_ATOMIC, "SQLITE_IOERR_COMMIT_ATOMIC");
-                SetCode(isolate, SQLITE_IOERR_ROLLBACK_ATOMIC, "SQLITE_IOERR_ROLLBACK_ATOMIC");
-                SetCode(isolate, SQLITE_IOERR_DATA, "SQLITE_IOERR_DATA");
-                SetCode(isolate, SQLITE_IOERR_CORRUPTFS, "SQLITE_IOERR_CORRUPTFS");
-                SetCode(isolate, SQLITE_IOERR_IN_PAGE, "SQLITE_IOERR_IN_PAGE");
                 SetCode(isolate, SQLITE_LOCKED_SHAREDCACHE, "SQLITE_LOCKED_SHAREDCACHE");
-                SetCode(isolate, SQLITE_LOCKED_VTAB, "SQLITE_LOCKED_VTAB");
                 SetCode(isolate, SQLITE_BUSY_RECOVERY, "SQLITE_BUSY_RECOVERY");
                 SetCode(isolate, SQLITE_BUSY_SNAPSHOT, "SQLITE_BUSY_SNAPSHOT");
                 SetCode(isolate, SQLITE_CANTOPEN_NOTEMPDIR, "SQLITE_CANTOPEN_NOTEMPDIR");
                 SetCode(isolate, SQLITE_CANTOPEN_ISDIR, "SQLITE_CANTOPEN_ISDIR");
                 SetCode(isolate, SQLITE_CANTOPEN_FULLPATH, "SQLITE_CANTOPEN_FULLPATH");
                 SetCode(isolate, SQLITE_CANTOPEN_CONVPATH, "SQLITE_CANTOPEN_CONVPATH");
-                SetCode(isolate, SQLITE_CANTOPEN_DIRTYWAL, "SQLITE_CANTOPEN_DIRTYWAL");
-                SetCode(isolate, SQLITE_CANTOPEN_SYMLINK, "SQLITE_CANTOPEN_SYMLINK");
                 SetCode(isolate, SQLITE_CORRUPT_VTAB, "SQLITE_CORRUPT_VTAB");
-                SetCode(isolate, SQLITE_CORRUPT_SEQUENCE, "SQLITE_CORRUPT_SEQUENCE");
-                SetCode(isolate, SQLITE_CORRUPT_INDEX, "SQLITE_CORRUPT_INDEX");
                 SetCode(isolate, SQLITE_READONLY_RECOVERY, "SQLITE_READONLY_RECOVERY");
                 SetCode(isolate, SQLITE_READONLY_CANTLOCK, "SQLITE_READONLY_CANTLOCK");
                 SetCode(isolate, SQLITE_READONLY_ROLLBACK, "SQLITE_READONLY_ROLLBACK");
                 SetCode(isolate, SQLITE_READONLY_DBMOVED, "SQLITE_READONLY_DBMOVED");
-                SetCode(isolate, SQLITE_READONLY_CANTINIT, "SQLITE_READONLY_CANTINIT");
-                SetCode(isolate, SQLITE_READONLY_DIRECTORY, "SQLITE_READONLY_DIRECTORY");
                 SetCode(isolate, SQLITE_ABORT_ROLLBACK, "SQLITE_ABORT_ROLLBACK");
                 SetCode(isolate, SQLITE_CONSTRAINT_CHECK, "SQLITE_CONSTRAINT_CHECK");
                 SetCode(isolate, SQLITE_CONSTRAINT_COMMITHOOK, "SQLITE_CONSTRAINT_COMMITHOOK");
@@ -277,25 +243,21 @@ CS::CS (v8::Isolate * isolate)
                 SetCode(isolate, SQLITE_CONSTRAINT_UNIQUE, "SQLITE_CONSTRAINT_UNIQUE");
                 SetCode(isolate, SQLITE_CONSTRAINT_VTAB, "SQLITE_CONSTRAINT_VTAB");
                 SetCode(isolate, SQLITE_CONSTRAINT_ROWID, "SQLITE_CONSTRAINT_ROWID");
-                SetCode(isolate, SQLITE_CONSTRAINT_PINNED, "SQLITE_CONSTRAINT_PINNED");
-                SetCode(isolate, SQLITE_CONSTRAINT_DATATYPE, "SQLITE_CONSTRAINT_DATATYPE");
                 SetCode(isolate, SQLITE_NOTICE_RECOVER_WAL, "SQLITE_NOTICE_RECOVER_WAL");
                 SetCode(isolate, SQLITE_NOTICE_RECOVER_ROLLBACK, "SQLITE_NOTICE_RECOVER_ROLLBACK");
-                SetCode(isolate, SQLITE_NOTICE_RBU, "SQLITE_NOTICE_RBU");
                 SetCode(isolate, SQLITE_WARNING_AUTOINDEX, "SQLITE_WARNING_AUTOINDEX");
                 SetCode(isolate, SQLITE_AUTH_USER, "SQLITE_AUTH_USER");
                 SetCode(isolate, SQLITE_OK_LOAD_PERMANENTLY, "SQLITE_OK_LOAD_PERMANENTLY");
-                SetCode(isolate, SQLITE_OK_SYMLINK, "SQLITE_OK_SYMLINK");
 }
-#line 161 "./src/util/constants.lzz"
-void CS::SetString (v8::Isolate * isolate, v8::Global <v8::String> & constant, char const * str)
-#line 161 "./src/util/constants.lzz"
-                                                                                                       {
+#line 140 "./src/util/constants.lzz"
+void CS::SetString (v8::Isolate * isolate, CopyablePersistent <v8::String> & constant, char const * str)
+#line 140 "./src/util/constants.lzz"
+                                                                                                               {
                 constant.Reset(isolate, InternalizedFromLatin1(isolate, str));
 }
-#line 165 "./src/util/constants.lzz"
+#line 144 "./src/util/constants.lzz"
 void CS::SetCode (v8::Isolate * isolate, int code, char const * str)
-#line 165 "./src/util/constants.lzz"
+#line 144 "./src/util/constants.lzz"
                                                                       {
                 codes.emplace(std::piecewise_construct,
                         std::forward_as_tuple(code),
@@ -444,29 +406,32 @@ void Database::CloseHandles ()
                         for (Backup* backup : backups) backup->CloseHandles();
                         stmts.clear();
                         backups.clear();
+                        synonyms_context_delete(synonyms_context);
+                        stopwords_context_delete(stopwords_context);
+                        phrases_context_delete(phrases_context);
                         int status = sqlite3_close(db_handle);
                         assert(status == SQLITE_OK); ((void)status);
                 }
 }
-#line 119 "./src/objects/database.lzz"
+#line 122 "./src/objects/database.lzz"
 Database::~ Database ()
-#line 119 "./src/objects/database.lzz"
+#line 122 "./src/objects/database.lzz"
                     {
                 if (open) addon->dbs.erase(this);
                 CloseHandles();
 }
-#line 126 "./src/objects/database.lzz"
-Database::Database (v8::Isolate * isolate, Addon * addon, sqlite3 * db_handle, v8::Local <v8::Value> logger)
-#line 131 "./src/objects/database.lzz"
-  : node::ObjectWrap (), db_handle (db_handle), open (true), busy (false), safe_ints (false), unsafe_mode (false), was_js_error (false), has_logger (logger->IsFunction()), iterators (0), addon (addon), logger (isolate, logger), stmts (), backups ()
-#line 144 "./src/objects/database.lzz"
+#line 129 "./src/objects/database.lzz"
+Database::Database (v8::Isolate * isolate, Addon * addon, sqlite3 * db_handle, SynonymsTokenizerCreateContext * synonyms_context, StopwordsTokenizerCreateContext * stopwords_context, PhrasesTokenizerCreateContext * phrases_context, v8::Local <v8::Value> logger)
+#line 137 "./src/objects/database.lzz"
+  : node::ObjectWrap (), db_handle (db_handle), synonyms_context (synonyms_context), stopwords_context (stopwords_context), phrases_context (phrases_context), open (true), busy (false), safe_ints (false), unsafe_mode (false), was_js_error (false), has_logger (logger->IsFunction()), iterators (0), addon (addon), logger (isolate, logger), stmts (), backups ()
+#line 153 "./src/objects/database.lzz"
                           {
                 assert(db_handle != NULL);
                 addon->dbs.insert(this);
 }
-#line 149 "./src/objects/database.lzz"
+#line 158 "./src/objects/database.lzz"
 void Database::JS_new (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 149 "./src/objects/database.lzz"
+#line 158 "./src/objects/database.lzz"
                             {
                 assert(info.IsConstructCall());
                 if ( info . Length ( ) <= ( 0 ) || ! info [ 0 ] -> IsString ( ) ) return ThrowTypeError ( "Expected " "first" " argument to be " "a string" ) ; v8 :: Local < v8 :: String > filename = ( info [ 0 ] . As < v8 :: String > ( ) ) ;
@@ -481,6 +446,10 @@ void Database::JS_new (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                 Addon * addon = static_cast < Addon * > ( info . Data ( ) . As < v8 :: External > ( ) -> Value ( ) ) ;
                 v8 :: Isolate * isolate = info . GetIsolate ( ) ;
                 sqlite3* db_handle;
+                fts5_api* fts_api;
+                SynonymsTokenizerCreateContext* synonyms_context;
+                StopwordsTokenizerCreateContext* stopwords_context;
+                PhrasesTokenizerCreateContext* phrases_context;
                 v8::String::Utf8Value utf8(isolate, filename);
                 int mask = readonly ? SQLITE_OPEN_READONLY
                         : must_exist ? SQLITE_OPEN_READWRITE
@@ -488,6 +457,79 @@ void Database::JS_new (v8::FunctionCallbackInfo <v8 :: Value> const & info)
 
                 if (sqlite3_open_v2(*utf8, &db_handle, mask, NULL) != SQLITE_OK) {
                         ThrowSqliteError(addon, db_handle);
+                        int status = sqlite3_close(db_handle);
+                        assert(status == SQLITE_OK); ((void)status);
+                        return;
+                }
+
+                fts_api = fts5_api_from_db(db_handle);
+                if (fts_api == NULL) {
+                        ThrowSqliteError(addon, "Unable to get FTS5 API", SQLITE_ERROR);
+                        int status = sqlite3_close(db_handle);
+                        assert(status == SQLITE_OK); ((void)status);
+                        return;
+                }
+
+                static fts5_tokenizer unicode_tokenizer = {
+                        .xCreate = unicode_tokenizer_create,
+                        .xDelete = unicode_tokenizer_delete,
+                        .xTokenize = unicode_tokenizer_tokenize
+                };
+
+
+                if (fts_api->xCreateTokenizer(fts_api, "unicode", NULL, &unicode_tokenizer, 0) != SQLITE_OK) {
+                        ThrowSqliteError(addon, "Unable to create unicode tokenizer", SQLITE_ERROR);
+                        int status = sqlite3_close(db_handle);
+                        assert(status == SQLITE_OK); ((void)status);
+                        return;
+                }
+
+                static fts5_tokenizer synonyms_tokenizer = {
+                        .xCreate = synonyms_tokenizer_create,
+                        .xDelete = synonyms_tokenizer_delete,
+                        .xTokenize = synonyms_tokenizer_tokenize
+                };
+
+
+                synonyms_context_create(db_handle, fts_api, &synonyms_context);
+                if (fts_api->xCreateTokenizer(fts_api, "synonyms", (void *)synonyms_context, &synonyms_tokenizer, 0) != SQLITE_OK) {
+                        ThrowSqliteError(addon, "Unable to create synonyms tokenizer", SQLITE_ERROR);
+                        synonyms_context_delete(synonyms_context);
+                        int status = sqlite3_close(db_handle);
+                        assert(status == SQLITE_OK); ((void)status);
+                        return;
+                }
+
+                static fts5_tokenizer stopwords_tokenizer = {
+                        .xCreate = stopwords_tokenizer_create,
+                        .xDelete = stopwords_tokenizer_delete,
+                        .xTokenize = stopwords_tokenizer_tokenize
+                };
+
+
+                stopwords_context_create(db_handle, fts_api, &stopwords_context);
+                if (fts_api->xCreateTokenizer(fts_api, "stopwords", (void *)stopwords_context, &stopwords_tokenizer, 0) != SQLITE_OK) {
+                        ThrowSqliteError(addon, "Unable to create stopwords tokenizer", SQLITE_ERROR);
+                        stopwords_context_delete(stopwords_context);
+                        synonyms_context_delete(synonyms_context);
+                        int status = sqlite3_close(db_handle);
+                        assert(status == SQLITE_OK); ((void)status);
+                        return;
+                }
+
+                static fts5_tokenizer phrases_tokenizer = {
+                        .xCreate = phrases_tokenizer_create,
+                        .xDelete = phrases_tokenizer_delete,
+                        .xTokenize = phrases_tokenizer_tokenize
+                };
+
+
+                phrases_context_create(db_handle, fts_api, &phrases_context);
+                if (fts_api->xCreateTokenizer(fts_api, "phrases", (void *)phrases_context, &phrases_tokenizer, 0) != SQLITE_OK) {
+                        ThrowSqliteError(addon, "Unable to create phrases tokenizer", SQLITE_ERROR);
+                        phrases_context_delete(phrases_context);
+                        stopwords_context_delete(stopwords_context);
+                        synonyms_context_delete(synonyms_context);
                         int status = sqlite3_close(db_handle);
                         assert(status == SQLITE_OK); ((void)status);
                         return;
@@ -510,7 +552,7 @@ void Database::JS_new (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                 }
 
                 v8 :: Local < v8 :: Context > ctx = isolate -> GetCurrentContext ( ) ;
-                Database* db = new Database(isolate, addon, db_handle, logger);
+                Database* db = new Database(isolate, addon, db_handle, synonyms_context, stopwords_context, phrases_context, logger);
                 db->Wrap(info.This());
                 SetFrozen(isolate, ctx, info.This(), addon->cs.memory, v8::Boolean::New(isolate, in_memory));
                 SetFrozen(isolate, ctx, info.This(), addon->cs.readonly, v8::Boolean::New(isolate, readonly));
@@ -518,9 +560,9 @@ void Database::JS_new (v8::FunctionCallbackInfo <v8 :: Value> const & info)
 
                 info.GetReturnValue().Set(info.This());
 }
-#line 201 "./src/objects/database.lzz"
+#line 287 "./src/objects/database.lzz"
 void Database::JS_prepare (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 201 "./src/objects/database.lzz"
+#line 287 "./src/objects/database.lzz"
                                 {
                 if ( info . Length ( ) <= ( 0 ) || ! info [ 0 ] -> IsString ( ) ) return ThrowTypeError ( "Expected " "first" " argument to be " "a string" ) ; v8 :: Local < v8 :: String > source = ( info [ 0 ] . As < v8 :: String > ( ) ) ;
                 if ( info . Length ( ) <= ( 1 ) || ! info [ 1 ] -> IsObject ( ) ) return ThrowTypeError ( "Expected " "second" " argument to be " "an object" ) ; v8 :: Local < v8 :: Object > database = ( info [ 1 ] . As < v8 :: Object > ( ) ) ;
@@ -536,9 +578,9 @@ void Database::JS_prepare (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                 addon->privileged_info = NULL;
                 if (!maybeStatement.IsEmpty()) info.GetReturnValue().Set(maybeStatement.ToLocalChecked());
 }
-#line 217 "./src/objects/database.lzz"
+#line 303 "./src/objects/database.lzz"
 void Database::JS_exec (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 217 "./src/objects/database.lzz"
+#line 303 "./src/objects/database.lzz"
                              {
                 Database* db = node :: ObjectWrap :: Unwrap <Database>(info.This());
                 if ( info . Length ( ) <= ( 0 ) || ! info [ 0 ] -> IsString ( ) ) return ThrowTypeError ( "Expected " "first" " argument to be " "a string" ) ; v8 :: Local < v8 :: String > source = ( info [ 0 ] . As < v8 :: String > ( ) ) ;
@@ -578,9 +620,9 @@ void Database::JS_exec (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                         db->ThrowDatabaseError();
                 }
 }
-#line 257 "./src/objects/database.lzz"
+#line 343 "./src/objects/database.lzz"
 void Database::JS_backup (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 257 "./src/objects/database.lzz"
+#line 343 "./src/objects/database.lzz"
                                {
                 if ( info . Length ( ) <= ( 0 ) || ! info [ 0 ] -> IsObject ( ) ) return ThrowTypeError ( "Expected " "first" " argument to be " "an object" ) ; v8 :: Local < v8 :: Object > database = ( info [ 0 ] . As < v8 :: Object > ( ) ) ;
                 if ( info . Length ( ) <= ( 1 ) || ! info [ 1 ] -> IsString ( ) ) return ThrowTypeError ( "Expected " "second" " argument to be " "a string" ) ; v8 :: Local < v8 :: String > attachedName = ( info [ 1 ] . As < v8 :: String > ( ) ) ;
@@ -598,9 +640,9 @@ void Database::JS_backup (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                 addon->privileged_info = NULL;
                 if (!maybeBackup.IsEmpty()) info.GetReturnValue().Set(maybeBackup.ToLocalChecked());
 }
-#line 275 "./src/objects/database.lzz"
+#line 361 "./src/objects/database.lzz"
 void Database::JS_serialize (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 275 "./src/objects/database.lzz"
+#line 361 "./src/objects/database.lzz"
                                   {
                 Database* db = node :: ObjectWrap :: Unwrap <Database>(info.This());
                 if ( info . Length ( ) <= ( 0 ) || ! info [ 0 ] -> IsString ( ) ) return ThrowTypeError ( "Expected " "first" " argument to be " "a string" ) ; v8 :: Local < v8 :: String > attachedName = ( info [ 0 ] . As < v8 :: String > ( ) ) ;
@@ -619,12 +661,12 @@ void Database::JS_serialize (v8::FunctionCallbackInfo <v8 :: Value> const & info
                 }
 
                 info.GetReturnValue().Set(
-                        SAFE_NEW_BUFFER(isolate, reinterpret_cast<char*>(data), length, FreeSerialization, NULL).ToLocalChecked()
+                        node::Buffer::New(isolate, reinterpret_cast<char*>(data), length, FreeSerialization, NULL).ToLocalChecked()
                 );
 }
-#line 297 "./src/objects/database.lzz"
+#line 383 "./src/objects/database.lzz"
 void Database::JS_function (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 297 "./src/objects/database.lzz"
+#line 383 "./src/objects/database.lzz"
                                  {
                 Database* db = node :: ObjectWrap :: Unwrap <Database>(info.This());
                 if ( info . Length ( ) <= ( 0 ) || ! info [ 0 ] -> IsFunction ( ) ) return ThrowTypeError ( "Expected " "first" " argument to be " "a function" ) ; v8 :: Local < v8 :: Function > fn = ( info [ 0 ] . As < v8 :: Function > ( ) ) ;
@@ -648,9 +690,9 @@ void Database::JS_function (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                         db->ThrowDatabaseError();
                 }
 }
-#line 321 "./src/objects/database.lzz"
+#line 407 "./src/objects/database.lzz"
 void Database::JS_aggregate (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 321 "./src/objects/database.lzz"
+#line 407 "./src/objects/database.lzz"
                                   {
                 Database* db = node :: ObjectWrap :: Unwrap <Database>(info.This());
                 if ( info . Length ( ) <= ( 0 ) ) return ThrowTypeError ( "Expected a " "first" " argument" ) ; v8 :: Local < v8 :: Value > start = info [ 0 ] ;
@@ -679,9 +721,9 @@ void Database::JS_aggregate (v8::FunctionCallbackInfo <v8 :: Value> const & info
                         db->ThrowDatabaseError();
                 }
 }
-#line 350 "./src/objects/database.lzz"
+#line 436 "./src/objects/database.lzz"
 void Database::JS_table (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 350 "./src/objects/database.lzz"
+#line 436 "./src/objects/database.lzz"
                               {
                 Database* db = node :: ObjectWrap :: Unwrap <Database>(info.This());
                 if ( info . Length ( ) <= ( 0 ) || ! info [ 0 ] -> IsFunction ( ) ) return ThrowTypeError ( "Expected " "first" " argument to be " "a function" ) ; v8 :: Local < v8 :: Function > factory = ( info [ 0 ] . As < v8 :: Function > ( ) ) ;
@@ -701,9 +743,9 @@ void Database::JS_table (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                 }
                 db->busy = false;
 }
-#line 370 "./src/objects/database.lzz"
+#line 456 "./src/objects/database.lzz"
 void Database::JS_loadExtension (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 370 "./src/objects/database.lzz"
+#line 456 "./src/objects/database.lzz"
                                       {
                 Database* db = node :: ObjectWrap :: Unwrap <Database>(info.This());
                 v8::Local<v8::String> entryPoint;
@@ -725,9 +767,9 @@ void Database::JS_loadExtension (v8::FunctionCallbackInfo <v8 :: Value> const & 
                 }
                 sqlite3_free(error);
 }
-#line 392 "./src/objects/database.lzz"
+#line 478 "./src/objects/database.lzz"
 void Database::JS_close (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 392 "./src/objects/database.lzz"
+#line 478 "./src/objects/database.lzz"
                               {
                 Database* db = node :: ObjectWrap :: Unwrap <Database>(info.This());
                 if (db->open) {
@@ -737,39 +779,39 @@ void Database::JS_close (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                         db->CloseHandles();
                 }
 }
-#line 402 "./src/objects/database.lzz"
+#line 488 "./src/objects/database.lzz"
 void Database::JS_defaultSafeIntegers (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 402 "./src/objects/database.lzz"
+#line 488 "./src/objects/database.lzz"
                                             {
                 Database* db = node :: ObjectWrap :: Unwrap <Database>(info.This());
                 if (info.Length() == 0) db->safe_ints = true;
                 else { if ( info . Length ( ) <= ( 0 ) || ! info [ 0 ] -> IsBoolean ( ) ) return ThrowTypeError ( "Expected " "first" " argument to be " "a boolean" ) ; db -> safe_ints = ( info [ 0 ] . As < v8 :: Boolean > ( ) ) -> Value ( ) ; }
 }
-#line 408 "./src/objects/database.lzz"
+#line 494 "./src/objects/database.lzz"
 void Database::JS_unsafeMode (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 408 "./src/objects/database.lzz"
+#line 494 "./src/objects/database.lzz"
                                    {
                 Database* db = node :: ObjectWrap :: Unwrap <Database>(info.This());
                 if (info.Length() == 0) db->unsafe_mode = true;
                 else { if ( info . Length ( ) <= ( 0 ) || ! info [ 0 ] -> IsBoolean ( ) ) return ThrowTypeError ( "Expected " "first" " argument to be " "a boolean" ) ; db -> unsafe_mode = ( info [ 0 ] . As < v8 :: Boolean > ( ) ) -> Value ( ) ; }
                 sqlite3_db_config(db->db_handle, SQLITE_DBCONFIG_DEFENSIVE, static_cast<int>(!db->unsafe_mode), NULL);
 }
-#line 415 "./src/objects/database.lzz"
-void Database::JS_open (v8::Local <v8 :: Name> _, v8::PropertyCallbackInfo <v8 :: Value> const & info)
-#line 415 "./src/objects/database.lzz"
+#line 501 "./src/objects/database.lzz"
+void Database::JS_open (v8::Local <v8 :: String> _, v8::PropertyCallbackInfo <v8 :: Value> const & info)
+#line 501 "./src/objects/database.lzz"
                              {
                 info.GetReturnValue().Set( node :: ObjectWrap :: Unwrap <Database>(info.This())->open);
 }
-#line 419 "./src/objects/database.lzz"
-void Database::JS_inTransaction (v8::Local <v8 :: Name> _, v8::PropertyCallbackInfo <v8 :: Value> const & info)
-#line 419 "./src/objects/database.lzz"
+#line 505 "./src/objects/database.lzz"
+void Database::JS_inTransaction (v8::Local <v8 :: String> _, v8::PropertyCallbackInfo <v8 :: Value> const & info)
+#line 505 "./src/objects/database.lzz"
                                       {
                 Database* db = node :: ObjectWrap :: Unwrap <Database>(info.This());
                 info.GetReturnValue().Set(db->open && !static_cast<bool>(sqlite3_get_autocommit(db->db_handle)));
 }
-#line 424 "./src/objects/database.lzz"
+#line 510 "./src/objects/database.lzz"
 bool Database::Deserialize (v8::Local <v8::Object> buffer, Addon * addon, sqlite3 * db_handle, bool readonly)
-#line 424 "./src/objects/database.lzz"
+#line 510 "./src/objects/database.lzz"
                                                                                                                {
                 size_t length = node::Buffer::Length(buffer);
                 unsigned char* data = (unsigned char*)sqlite3_malloc64(length);
@@ -794,15 +836,15 @@ bool Database::Deserialize (v8::Local <v8::Object> buffer, Addon * addon, sqlite
 
                 return true;
 }
-#line 449 "./src/objects/database.lzz"
+#line 535 "./src/objects/database.lzz"
 void Database::FreeSerialization (char * data, void * _)
-#line 449 "./src/objects/database.lzz"
+#line 535 "./src/objects/database.lzz"
                                                            {
                 sqlite3_free(data);
 }
-#line 453 "./src/objects/database.lzz"
+#line 539 "./src/objects/database.lzz"
 int const Database::MAX_BUFFER_SIZE;
-#line 454 "./src/objects/database.lzz"
+#line 540 "./src/objects/database.lzz"
 int const Database::MAX_STRING_SIZE;
 #line 4 "./src/objects/statement.lzz"
 v8::Local <v8 :: Function> Statement::Init (v8::Isolate * isolate, v8::Local <v8 :: External> data)
@@ -905,27 +947,20 @@ void Statement::JS_new (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                 if (handle == NULL) {
                         return ThrowRangeError("The supplied SQL string contains no statements");
                 }
-
-                for (char c; (c = *tail); ) {
-                        if (IS_SKIPPED(c)) {
-                                ++tail;
-                                continue;
-                        }
+                for (char c; (c = *tail); ++tail) {
+                        if (IS_SKIPPED(c)) continue;
                         if (c == '/' && tail[1] == '*') {
                                 tail += 2;
                                 for (char c; (c = *tail); ++tail) {
                                         if (c == '*' && tail[1] == '/') {
-                                                tail += 2;
+                                                tail += 1;
                                                 break;
                                         }
                                 }
                         } else if (c == '-' && tail[1] == '-') {
                                 tail += 2;
                                 for (char c; (c = *tail); ++tail) {
-                                        if (c == '\n') {
-                                                ++tail;
-                                                break;
-                                        }
+                                        if (c == '\n') break;
                                 }
                         } else {
                                 sqlite3_finalize(handle);
@@ -944,9 +979,9 @@ void Statement::JS_new (v8::FunctionCallbackInfo <v8 :: Value> const & info)
 
                 info.GetReturnValue().Set(info.This());
 }
-#line 156 "./src/objects/statement.lzz"
+#line 149 "./src/objects/statement.lzz"
 void Statement::JS_run (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 156 "./src/objects/statement.lzz"
+#line 149 "./src/objects/statement.lzz"
                             {
                 Statement * stmt = node :: ObjectWrap :: Unwrap < Statement > ( info . This ( ) ) ; ( ( void ) 0 ) ; sqlite3_stmt * handle = stmt -> handle ; Database * db = stmt -> db ; if ( ! db -> GetState ( ) -> open ) return ThrowTypeError ( "The database connection is not open" ) ; if ( db -> GetState ( ) -> busy ) return ThrowTypeError ( "This database connection is busy executing a query" ) ; if ( stmt -> locked ) return ThrowTypeError ( "This statement is busy executing a query" ) ; if ( ! db -> GetState ( ) -> unsafe_mode ) { if ( db -> GetState ( ) -> iterators ) return ThrowTypeError ( "This database connection is busy executing a query" ) ; } ( ( void ) 0 ) ; const bool bound = stmt -> bound ; if ( ! bound ) { Binder binder ( handle ) ; if ( ! binder . Bind ( info , info . Length ( ) , stmt ) ) { sqlite3_clear_bindings ( handle ) ; return ; } ( ( void ) 0 ) ; } else if ( info . Length ( ) > 0 ) { return ThrowTypeError ( "This statement already has bound parameters" ) ; } ( ( void ) 0 ) ; db -> GetState ( ) -> busy = true ; v8 :: Isolate * isolate = info . GetIsolate ( ) ; if ( db -> Log ( isolate , handle ) ) { db -> GetState ( ) -> busy = false ; db -> ThrowDatabaseError ( ) ; if ( ! bound ) { sqlite3_clear_bindings ( handle ) ; } return ; } ( ( void ) 0 ) ;
                 sqlite3* db_handle = db->GetHandle();
@@ -969,9 +1004,9 @@ void Statement::JS_run (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                 }
                 db -> GetState ( ) -> busy = false ; db -> ThrowDatabaseError ( ) ; if ( ! bound ) { sqlite3_clear_bindings ( handle ) ; } return ;
 }
-#line 179 "./src/objects/statement.lzz"
+#line 172 "./src/objects/statement.lzz"
 void Statement::JS_get (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 179 "./src/objects/statement.lzz"
+#line 172 "./src/objects/statement.lzz"
                             {
                 Statement * stmt = node :: ObjectWrap :: Unwrap < Statement > ( info . This ( ) ) ; if ( ! stmt -> returns_data ) return ThrowTypeError ( "This statement does not return data. Use run() instead" ) ; sqlite3_stmt * handle = stmt -> handle ; Database * db = stmt -> db ; if ( ! db -> GetState ( ) -> open ) return ThrowTypeError ( "The database connection is not open" ) ; if ( db -> GetState ( ) -> busy ) return ThrowTypeError ( "This database connection is busy executing a query" ) ; if ( stmt -> locked ) return ThrowTypeError ( "This statement is busy executing a query" ) ; const bool bound = stmt -> bound ; if ( ! bound ) { Binder binder ( handle ) ; if ( ! binder . Bind ( info , info . Length ( ) , stmt ) ) { sqlite3_clear_bindings ( handle ) ; return ; } ( ( void ) 0 ) ; } else if ( info . Length ( ) > 0 ) { return ThrowTypeError ( "This statement already has bound parameters" ) ; } ( ( void ) 0 ) ; db -> GetState ( ) -> busy = true ; v8 :: Isolate * isolate = info . GetIsolate ( ) ; if ( db -> Log ( isolate , handle ) ) { db -> GetState ( ) -> busy = false ; db -> ThrowDatabaseError ( ) ; if ( ! bound ) { sqlite3_clear_bindings ( handle ) ; } return ; } ( ( void ) 0 ) ;
                 int status = sqlite3_step(handle);
@@ -986,9 +1021,9 @@ void Statement::JS_get (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                 sqlite3_reset(handle);
                 db -> GetState ( ) -> busy = false ; db -> ThrowDatabaseError ( ) ; if ( ! bound ) { sqlite3_clear_bindings ( handle ) ; } return ;
 }
-#line 194 "./src/objects/statement.lzz"
+#line 187 "./src/objects/statement.lzz"
 void Statement::JS_all (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 194 "./src/objects/statement.lzz"
+#line 187 "./src/objects/statement.lzz"
                             {
                 Statement * stmt = node :: ObjectWrap :: Unwrap < Statement > ( info . This ( ) ) ; if ( ! stmt -> returns_data ) return ThrowTypeError ( "This statement does not return data. Use run() instead" ) ; sqlite3_stmt * handle = stmt -> handle ; Database * db = stmt -> db ; if ( ! db -> GetState ( ) -> open ) return ThrowTypeError ( "The database connection is not open" ) ; if ( db -> GetState ( ) -> busy ) return ThrowTypeError ( "This database connection is busy executing a query" ) ; if ( stmt -> locked ) return ThrowTypeError ( "This statement is busy executing a query" ) ; const bool bound = stmt -> bound ; if ( ! bound ) { Binder binder ( handle ) ; if ( ! binder . Bind ( info , info . Length ( ) , stmt ) ) { sqlite3_clear_bindings ( handle ) ; return ; } ( ( void ) 0 ) ; } else if ( info . Length ( ) > 0 ) { return ThrowTypeError ( "This statement already has bound parameters" ) ; } ( ( void ) 0 ) ; db -> GetState ( ) -> busy = true ; v8 :: Isolate * isolate = info . GetIsolate ( ) ; if ( db -> Log ( isolate , handle ) ) { db -> GetState ( ) -> busy = false ; db -> ThrowDatabaseError ( ) ; if ( ! bound ) { sqlite3_clear_bindings ( handle ) ; } return ; } ( ( void ) 0 ) ;
                 v8 :: Local < v8 :: Context > ctx = isolate -> GetCurrentContext ( ) ;
@@ -1009,9 +1044,9 @@ void Statement::JS_all (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                 if (js_error) db->GetState()->was_js_error = true;
                 db -> GetState ( ) -> busy = false ; db -> ThrowDatabaseError ( ) ; if ( ! bound ) { sqlite3_clear_bindings ( handle ) ; } return ;
 }
-#line 215 "./src/objects/statement.lzz"
+#line 208 "./src/objects/statement.lzz"
 void Statement::JS_iterate (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 215 "./src/objects/statement.lzz"
+#line 208 "./src/objects/statement.lzz"
                                 {
                 Addon * addon = static_cast < Addon * > ( info . Data ( ) . As < v8 :: External > ( ) -> Value ( ) ) ;
                 v8 :: Isolate * isolate = info . GetIsolate ( ) ;
@@ -1021,9 +1056,9 @@ void Statement::JS_iterate (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                 addon->privileged_info = NULL;
                 if (!maybeIterator.IsEmpty()) info.GetReturnValue().Set(maybeIterator.ToLocalChecked());
 }
-#line 225 "./src/objects/statement.lzz"
+#line 218 "./src/objects/statement.lzz"
 void Statement::JS_bind (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 225 "./src/objects/statement.lzz"
+#line 218 "./src/objects/statement.lzz"
                              {
                 Statement* stmt = node :: ObjectWrap :: Unwrap <Statement>(info.This());
                 if (stmt->bound) return ThrowTypeError("The bind() method can only be invoked once per statement object");
@@ -1034,9 +1069,9 @@ void Statement::JS_bind (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                 stmt->bound = true;
                 info.GetReturnValue().Set(info.This());
 }
-#line 236 "./src/objects/statement.lzz"
+#line 229 "./src/objects/statement.lzz"
 void Statement::JS_pluck (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 236 "./src/objects/statement.lzz"
+#line 229 "./src/objects/statement.lzz"
                               {
                 Statement* stmt = node :: ObjectWrap :: Unwrap <Statement>(info.This());
                 if (!stmt->returns_data) return ThrowTypeError("The pluck() method is only for statements that return data");
@@ -1047,9 +1082,9 @@ void Statement::JS_pluck (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                 stmt->mode = use ? Data::PLUCK : stmt->mode == Data::PLUCK ? Data::FLAT : stmt->mode;
                 info.GetReturnValue().Set(info.This());
 }
-#line 247 "./src/objects/statement.lzz"
+#line 240 "./src/objects/statement.lzz"
 void Statement::JS_expand (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 247 "./src/objects/statement.lzz"
+#line 240 "./src/objects/statement.lzz"
                                {
                 Statement* stmt = node :: ObjectWrap :: Unwrap <Statement>(info.This());
                 if (!stmt->returns_data) return ThrowTypeError("The expand() method is only for statements that return data");
@@ -1060,9 +1095,9 @@ void Statement::JS_expand (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                 stmt->mode = use ? Data::EXPAND : stmt->mode == Data::EXPAND ? Data::FLAT : stmt->mode;
                 info.GetReturnValue().Set(info.This());
 }
-#line 258 "./src/objects/statement.lzz"
+#line 251 "./src/objects/statement.lzz"
 void Statement::JS_raw (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 258 "./src/objects/statement.lzz"
+#line 251 "./src/objects/statement.lzz"
                             {
                 Statement* stmt = node :: ObjectWrap :: Unwrap <Statement>(info.This());
                 if (!stmt->returns_data) return ThrowTypeError("The raw() method is only for statements that return data");
@@ -1073,9 +1108,9 @@ void Statement::JS_raw (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                 stmt->mode = use ? Data::RAW : stmt->mode == Data::RAW ? Data::FLAT : stmt->mode;
                 info.GetReturnValue().Set(info.This());
 }
-#line 269 "./src/objects/statement.lzz"
+#line 262 "./src/objects/statement.lzz"
 void Statement::JS_safeIntegers (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 269 "./src/objects/statement.lzz"
+#line 262 "./src/objects/statement.lzz"
                                      {
                 Statement* stmt = node :: ObjectWrap :: Unwrap <Statement>(info.This());
                 if ( stmt -> db -> GetState ( ) -> busy ) return ThrowTypeError ( "This database connection is busy executing a query" ) ;
@@ -1084,9 +1119,9 @@ void Statement::JS_safeIntegers (v8::FunctionCallbackInfo <v8 :: Value> const & 
                 else { if ( info . Length ( ) <= ( 0 ) || ! info [ 0 ] -> IsBoolean ( ) ) return ThrowTypeError ( "Expected " "first" " argument to be " "a boolean" ) ; stmt -> safe_ints = ( info [ 0 ] . As < v8 :: Boolean > ( ) ) -> Value ( ) ; }
                 info.GetReturnValue().Set(info.This());
 }
-#line 278 "./src/objects/statement.lzz"
+#line 271 "./src/objects/statement.lzz"
 void Statement::JS_columns (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 278 "./src/objects/statement.lzz"
+#line 271 "./src/objects/statement.lzz"
                                 {
                 Statement* stmt = node :: ObjectWrap :: Unwrap <Statement>(info.This());
                 if (!stmt->returns_data) return ThrowTypeError("The columns() method is only for statements that return data");
@@ -1129,9 +1164,9 @@ void Statement::JS_columns (v8::FunctionCallbackInfo <v8 :: Value> const & info)
 
                 info.GetReturnValue().Set(columns);
 }
-#line 321 "./src/objects/statement.lzz"
-void Statement::JS_busy (v8::Local <v8 :: Name> _, v8::PropertyCallbackInfo <v8 :: Value> const & info)
-#line 321 "./src/objects/statement.lzz"
+#line 314 "./src/objects/statement.lzz"
+void Statement::JS_busy (v8::Local <v8 :: String> _, v8::PropertyCallbackInfo <v8 :: Value> const & info)
+#line 314 "./src/objects/statement.lzz"
                              {
                 Statement* stmt = node :: ObjectWrap :: Unwrap <Statement>(info.This());
                 info.GetReturnValue().Set(stmt->alive && stmt->locked);
@@ -2161,26 +2196,26 @@ Binder::Result Binder::BindArgs (v8::FunctionCallbackInfo <v8 :: Value> const & 
 
                 return { count, bound_object };
 }
-#line 35 "./src/better_sqlite3.lzz"
+#line 45 "./src/better_sqlite3.lzz"
 void Addon::JS_setErrorConstructor (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 35 "./src/better_sqlite3.lzz"
+#line 45 "./src/better_sqlite3.lzz"
                                             {
                 if ( info . Length ( ) <= ( 0 ) || ! info [ 0 ] -> IsFunction ( ) ) return ThrowTypeError ( "Expected " "first" " argument to be " "a function" ) ; v8 :: Local < v8 :: Function > SqliteError = ( info [ 0 ] . As < v8 :: Function > ( ) ) ;
                 static_cast < Addon * > ( info . Data ( ) . As < v8 :: External > ( ) -> Value ( ) ) ->SqliteError.Reset( info . GetIsolate ( ) , SqliteError);
 }
-#line 40 "./src/better_sqlite3.lzz"
+#line 50 "./src/better_sqlite3.lzz"
 void Addon::Cleanup (void * ptr)
-#line 40 "./src/better_sqlite3.lzz"
+#line 50 "./src/better_sqlite3.lzz"
                                        {
                 Addon* addon = static_cast<Addon*>(ptr);
                 for (Database* db : addon->dbs) db->CloseHandles();
                 addon->dbs.clear();
                 delete addon;
 }
-#line 47 "./src/better_sqlite3.lzz"
+#line 57 "./src/better_sqlite3.lzz"
 Addon::Addon (v8::Isolate * isolate)
-#line 47 "./src/better_sqlite3.lzz"
+#line 57 "./src/better_sqlite3.lzz"
   : privileged_info (NULL), next_id (0), cs (isolate)
-#line 50 "./src/better_sqlite3.lzz"
+#line 60 "./src/better_sqlite3.lzz"
                             {}
 #undef LZZ_INLINE
