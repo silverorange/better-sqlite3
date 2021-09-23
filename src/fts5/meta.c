@@ -33,7 +33,8 @@ int meta_needs_update(sqlite3 *pDb, const char *zName, int nLastUpdate,
     sqlite3_snprintf((int)nStatementLength, zStatementSql, zStatementTemplate,
                      zTableName);
     log_debug("[meta] Running SQL \"%s\"\n", zStatementSql);
-    rc = sqlite3_prepare_v2(pDb, zStatementSql, (int)nStatementLength, &pStmt, NULL);
+    rc = sqlite3_prepare_v2(pDb, zStatementSql, (int)nStatementLength, &pStmt,
+                            NULL);
     if (rc != SQLITE_OK) {
       log_error("[meta] Failed to prepare statement: %s\n",
                 sqlite3_errmsg(pDb));
