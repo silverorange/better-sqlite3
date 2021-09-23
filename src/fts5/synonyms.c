@@ -23,7 +23,7 @@ struct SynonymsCallbackContext {
 };
 
 const char *SYNONYMS_DEFAULT_SYNONYMS_TABLE_NAME = "fts5_synonyms";
-const char *SYNONYMS_DEFAULT_PARENT_TOKENIZER = "porter";
+const char *SYNONYMS_DEFAULT_PARENT_TOKENIZER = "phrases";
 
 #ifdef SQLITE_TOKENIZER_DEBUG
 static void debug_synonyms_hash(SynonymsHash *pSynonymsHash) {
@@ -225,7 +225,9 @@ int synonyms_context_create(sqlite3 *pDb, fts5_api *pFts5Api,
   }
 
   if (rc == SQLITE_OK) {
-    pRet = (SynonymsTokenizerCreateContext *)sqlite3_malloc(sizeof(SynonymsTokenizerCreateContext));
+    pRet = (SynonymsTokenizerCreateContext *)sqlite3_malloc(
+        sizeof(SynonymsTokenizerCreateContext));
+
     if (pRet) {
       memset(pRet, 0, sizeof(SynonymsTokenizerCreateContext));
 
@@ -337,7 +339,8 @@ static int synonyms_tokenize_callback(void *pCtx, int tflags,
     // Don't look for synonyms for stop-words.
     if (nToken > 0 && (nToken > 1 || pToken[0] != '\0')) {
       // Token string may or may not be null-terminated.
-      unsigned int nWordLength = pToken[nToken - 1] == '\0' ? nToken - 1 : nToken;
+      unsigned int nWordLength =
+          pToken[nToken - 1] == '\0' ? nToken - 1 : nToken;
 
       // look up any synonyms
       SynonymsHash *pSynonym = NULL;

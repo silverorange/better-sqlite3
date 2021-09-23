@@ -21,7 +21,7 @@ struct StopwordsCallbackContext {
   StopwordsHash *pStopwordsHash;
 };
 
-const char *STOPWORDS_DEFAULT_PARENT_TOKENIZER = "porter";
+const char *STOPWORDS_DEFAULT_PARENT_TOKENIZER = "unicode";
 const char *STOPWORDS_DEFAULT_TABLE_NAME = "fts5_stopwords";
 
 #ifdef SQLITE_TOKENIZER_DEBUG
@@ -125,7 +125,9 @@ static int stopwords_fetch_all_into_hash(sqlite3 *pDb, const char *zTableName,
     char *pWord = (char *)sqlite3_malloc(sizeof(char) * nLength);
     strncpy(pWord, zTempWord, nLength);
 
-    StopwordsHash *pStopword = (StopwordsHash *)sqlite3_malloc(sizeof(StopwordsHash));
+    StopwordsHash *pStopword =
+        (StopwordsHash *)sqlite3_malloc(sizeof(StopwordsHash));
+
     if (pStopword == NULL) {
       rc = SQLITE_NOMEM;
       // TODO break and free everthing, return null
@@ -210,7 +212,9 @@ int stopwords_context_create(sqlite3 *pDb, fts5_api *pFts5Api,
   }
 
   if (rc == SQLITE_OK) {
-    pRet = (StopwordsTokenizerCreateContext *)sqlite3_malloc(sizeof(StopwordsTokenizerCreateContext));
+    pRet = (StopwordsTokenizerCreateContext *)sqlite3_malloc(
+        sizeof(StopwordsTokenizerCreateContext));
+
     if (pRet) {
       memset(pRet, 0, sizeof(StopwordsTokenizerCreateContext));
 
