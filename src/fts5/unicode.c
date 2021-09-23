@@ -211,7 +211,7 @@ int unicode_tokenizer_create(void *pUnused, const char **azArg, int nArg,
 
       p->eRemoveDiacritic = FTS5_REMOVE_DIACRITICS_SIMPLE;
       p->nFold = 64;
-      p->aFold = sqlite3_malloc64(p->nFold * sizeof(char));
+      p->aFold = (char *)sqlite3_malloc64(p->nFold * sizeof(char));
       if (p->aFold == 0) {
         rc = SQLITE_NOMEM;
       }
@@ -326,7 +326,7 @@ int unicode_tokenizer_tokenize(Fts5Tokenizer *pTokenizer, void *pCtx,
       /* Grow the output buffer so that there is sufficient space to fit the
       ** largest possible utf-8 character.  */
       if (zOut > pEnd) {
-        aFold = sqlite3_malloc64((sqlite3_int64)nFold * 2);
+        aFold = (char *)sqlite3_malloc64((sqlite3_int64)nFold * 2);
         if (aFold == 0) {
           rc = SQLITE_NOMEM;
           goto tokenize_done;
