@@ -539,10 +539,8 @@ static int phrases_tokenize_callback(void *pCtx, int tflags, const char *pToken,
     // Finally emit the matched root phrase. Split multiple words into
     // separate tokens.
     unsigned int iRootWordStart = 0;
-    for (unsigned int i = 0; i < pMatchedPhrase->nRootLength; i++) {
-      if (pMatchedPhrase->pRoot[i] == ' ' ||
-          i == pMatchedPhrase->nRootLength - 1) {
-
+    for (unsigned int i = 0; i <= pMatchedPhrase->nRootLength; i++) {
+      if (i == pMatchedPhrase->nRootLength || pMatchedPhrase->pRoot[i] == ' ') {
         rc = p->xToken(p->pCtx, tflags, pMatchedPhrase->pRoot + iRootWordStart,
                        i - iRootWordStart, iOriginalStart, iOriginalEnd);
 
