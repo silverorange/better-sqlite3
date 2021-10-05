@@ -18,6 +18,7 @@
 #include "fts5/utarray.h"
 #include "fts5/fts5.h"
 #include "fts5/meta.h"
+#include "fts5/snowball.h"
 #include "fts5/stopwords.h"
 #include "fts5/synonyms.h"
 #include "fts5/phrases.h"
@@ -167,11 +168,11 @@ private:
 #line 72 "./src/util/bind-map.lzz"
   int length;
 };
-#line 30 "./src/better_sqlite3.lzz"
-struct Addon;
 #line 31 "./src/better_sqlite3.lzz"
-class Statement;
+struct Addon;
 #line 32 "./src/better_sqlite3.lzz"
+class Statement;
+#line 33 "./src/better_sqlite3.lzz"
 class Backup;
 #line 1 "./src/objects/database.lzz"
 class Database : public node::ObjectWrap
@@ -248,77 +249,71 @@ public:
   Addon * GetAddon ();
 #line 107 "./src/objects/database.lzz"
   void CloseHandles ();
-#line 122 "./src/objects/database.lzz"
+#line 119 "./src/objects/database.lzz"
   ~ Database ();
-#line 127 "./src/objects/database.lzz"
+#line 124 "./src/objects/database.lzz"
 private:
-#line 129 "./src/objects/database.lzz"
-  explicit Database (v8::Isolate * isolate, Addon * addon, sqlite3 * db_handle, SynonymsTokenizerCreateContext * synonyms_context, StopwordsTokenizerCreateContext * stopwords_context, PhrasesTokenizerCreateContext * phrases_context, v8::Local <v8::Value> logger);
-#line 158 "./src/objects/database.lzz"
+#line 126 "./src/objects/database.lzz"
+  explicit Database (v8::Isolate * isolate, Addon * addon, sqlite3 * db_handle, v8::Local <v8::Value> logger);
+#line 149 "./src/objects/database.lzz"
   static void JS_new (v8::FunctionCallbackInfo <v8 :: Value> const & info);
-#line 287 "./src/objects/database.lzz"
+#line 238 "./src/objects/database.lzz"
   static void JS_prepare (v8::FunctionCallbackInfo <v8 :: Value> const & info);
-#line 303 "./src/objects/database.lzz"
+#line 254 "./src/objects/database.lzz"
   static void JS_exec (v8::FunctionCallbackInfo <v8 :: Value> const & info);
-#line 343 "./src/objects/database.lzz"
+#line 294 "./src/objects/database.lzz"
   static void JS_backup (v8::FunctionCallbackInfo <v8 :: Value> const & info);
-#line 361 "./src/objects/database.lzz"
+#line 312 "./src/objects/database.lzz"
   static void JS_serialize (v8::FunctionCallbackInfo <v8 :: Value> const & info);
-#line 383 "./src/objects/database.lzz"
+#line 334 "./src/objects/database.lzz"
   static void JS_function (v8::FunctionCallbackInfo <v8 :: Value> const & info);
-#line 407 "./src/objects/database.lzz"
+#line 358 "./src/objects/database.lzz"
   static void JS_aggregate (v8::FunctionCallbackInfo <v8 :: Value> const & info);
-#line 436 "./src/objects/database.lzz"
+#line 387 "./src/objects/database.lzz"
   static void JS_table (v8::FunctionCallbackInfo <v8 :: Value> const & info);
-#line 456 "./src/objects/database.lzz"
+#line 407 "./src/objects/database.lzz"
   static void JS_loadExtension (v8::FunctionCallbackInfo <v8 :: Value> const & info);
-#line 478 "./src/objects/database.lzz"
+#line 429 "./src/objects/database.lzz"
   static void JS_close (v8::FunctionCallbackInfo <v8 :: Value> const & info);
-#line 488 "./src/objects/database.lzz"
+#line 439 "./src/objects/database.lzz"
   static void JS_defaultSafeIntegers (v8::FunctionCallbackInfo <v8 :: Value> const & info);
-#line 494 "./src/objects/database.lzz"
+#line 445 "./src/objects/database.lzz"
   static void JS_unsafeMode (v8::FunctionCallbackInfo <v8 :: Value> const & info);
-#line 501 "./src/objects/database.lzz"
+#line 452 "./src/objects/database.lzz"
   static void JS_open (v8::Local <v8 :: String> _, v8::PropertyCallbackInfo <v8 :: Value> const & info);
-#line 505 "./src/objects/database.lzz"
+#line 456 "./src/objects/database.lzz"
   static void JS_inTransaction (v8::Local <v8 :: String> _, v8::PropertyCallbackInfo <v8 :: Value> const & info);
-#line 510 "./src/objects/database.lzz"
+#line 461 "./src/objects/database.lzz"
   static bool Deserialize (v8::Local <v8::Object> buffer, Addon * addon, sqlite3 * db_handle, bool readonly);
-#line 535 "./src/objects/database.lzz"
+#line 486 "./src/objects/database.lzz"
   static void FreeSerialization (char * data, void * _);
-#line 539 "./src/objects/database.lzz"
+#line 490 "./src/objects/database.lzz"
   static int const MAX_BUFFER_SIZE = node::Buffer::kMaxLength > INT_MAX ? INT_MAX : static_cast<int>(node::Buffer::kMaxLength);
-#line 540 "./src/objects/database.lzz"
+#line 491 "./src/objects/database.lzz"
   static int const MAX_STRING_SIZE = v8::String::kMaxLength > INT_MAX ? INT_MAX : static_cast<int>(v8::String::kMaxLength);
-#line 542 "./src/objects/database.lzz"
+#line 493 "./src/objects/database.lzz"
   sqlite3 * const db_handle;
-#line 543 "./src/objects/database.lzz"
-  SynonymsTokenizerCreateContext * const synonyms_context;
-#line 544 "./src/objects/database.lzz"
-  StopwordsTokenizerCreateContext * const stopwords_context;
-#line 545 "./src/objects/database.lzz"
-  PhrasesTokenizerCreateContext * const phrases_context;
-#line 546 "./src/objects/database.lzz"
+#line 494 "./src/objects/database.lzz"
   bool open;
-#line 547 "./src/objects/database.lzz"
+#line 495 "./src/objects/database.lzz"
   bool busy;
-#line 548 "./src/objects/database.lzz"
+#line 496 "./src/objects/database.lzz"
   bool safe_ints;
-#line 549 "./src/objects/database.lzz"
+#line 497 "./src/objects/database.lzz"
   bool unsafe_mode;
-#line 550 "./src/objects/database.lzz"
+#line 498 "./src/objects/database.lzz"
   bool was_js_error;
-#line 551 "./src/objects/database.lzz"
+#line 499 "./src/objects/database.lzz"
   bool const has_logger;
-#line 552 "./src/objects/database.lzz"
+#line 500 "./src/objects/database.lzz"
   unsigned short int iterators;
-#line 553 "./src/objects/database.lzz"
+#line 501 "./src/objects/database.lzz"
   Addon * const addon;
-#line 554 "./src/objects/database.lzz"
+#line 502 "./src/objects/database.lzz"
   CopyablePersistent <v8::Value> const logger;
-#line 555 "./src/objects/database.lzz"
+#line 503 "./src/objects/database.lzz"
   std::set <Statement*, CompareStatement> stmts;
-#line 556 "./src/objects/database.lzz"
+#line 504 "./src/objects/database.lzz"
   std::set <Backup*, CompareBackup> backups;
 };
 #line 1 "./src/objects/statement.lzz"
@@ -791,32 +786,32 @@ private:
 #line 203 "./src/util/binder.lzz"
   bool success;
 };
-#line 44 "./src/better_sqlite3.lzz"
+#line 45 "./src/better_sqlite3.lzz"
 struct Addon
 {
-#line 45 "./src/better_sqlite3.lzz"
+#line 46 "./src/better_sqlite3.lzz"
   static void JS_setErrorConstructor (v8::FunctionCallbackInfo <v8 :: Value> const & info);
-#line 50 "./src/better_sqlite3.lzz"
+#line 51 "./src/better_sqlite3.lzz"
   static void Cleanup (void * ptr);
-#line 57 "./src/better_sqlite3.lzz"
+#line 58 "./src/better_sqlite3.lzz"
   explicit Addon (v8::Isolate * isolate);
-#line 62 "./src/better_sqlite3.lzz"
+#line 63 "./src/better_sqlite3.lzz"
   sqlite3_uint64 NextId ();
-#line 66 "./src/better_sqlite3.lzz"
-  CopyablePersistent <v8::Function> Statement;
 #line 67 "./src/better_sqlite3.lzz"
-  CopyablePersistent <v8::Function> StatementIterator;
+  CopyablePersistent <v8::Function> Statement;
 #line 68 "./src/better_sqlite3.lzz"
-  CopyablePersistent <v8::Function> Backup;
+  CopyablePersistent <v8::Function> StatementIterator;
 #line 69 "./src/better_sqlite3.lzz"
-  CopyablePersistent <v8::Function> SqliteError;
+  CopyablePersistent <v8::Function> Backup;
 #line 70 "./src/better_sqlite3.lzz"
-  v8::FunctionCallbackInfo <v8 :: Value> const * privileged_info;
+  CopyablePersistent <v8::Function> SqliteError;
 #line 71 "./src/better_sqlite3.lzz"
-  sqlite3_uint64 next_id;
+  v8::FunctionCallbackInfo <v8 :: Value> const * privileged_info;
 #line 72 "./src/better_sqlite3.lzz"
-  CS cs;
+  sqlite3_uint64 next_id;
 #line 73 "./src/better_sqlite3.lzz"
+  CS cs;
+#line 74 "./src/better_sqlite3.lzz"
   std::set <Database*, Database::CompareDatabase> dbs;
 };
 #line 16 "./src/util/macros.lzz"
@@ -1038,9 +1033,9 @@ LZZ_INLINE CustomTable::VTab * CustomTable::Cursor::GetVTab ()
                                                     {
                         return VTab::Upcast(base.pVtab);
 }
-#line 62 "./src/better_sqlite3.lzz"
+#line 63 "./src/better_sqlite3.lzz"
 LZZ_INLINE sqlite3_uint64 Addon::NextId ()
-#line 62 "./src/better_sqlite3.lzz"
+#line 63 "./src/better_sqlite3.lzz"
                                        {
                 return next_id++;
 }

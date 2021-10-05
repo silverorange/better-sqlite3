@@ -17,10 +17,11 @@
 		ctx->Exit();
 		return proto->StrictEquals(baseProto) || proto->StrictEquals(v8::Null(isolate));
 	}
-#line 77 "./src/better_sqlite3.lzz"
+#line 78 "./src/better_sqlite3.lzz"
 #include "fts5/fts5.c"
 #include "fts5/meta.c"
 #include "fts5/stopwords.c"
+#include "fts5/snowball.c"
 #include "fts5/synonyms.c"
 #include "fts5/phrases.c"
 #include "fts5/unicode.c"
@@ -406,32 +407,29 @@ void Database::CloseHandles ()
                         for (Backup* backup : backups) backup->CloseHandles();
                         stmts.clear();
                         backups.clear();
-                        synonyms_context_delete(synonyms_context);
-                        stopwords_context_delete(stopwords_context);
-                        phrases_context_delete(phrases_context);
                         int status = sqlite3_close(db_handle);
                         assert(status == SQLITE_OK); ((void)status);
                 }
 }
-#line 122 "./src/objects/database.lzz"
+#line 119 "./src/objects/database.lzz"
 Database::~ Database ()
-#line 122 "./src/objects/database.lzz"
+#line 119 "./src/objects/database.lzz"
                     {
                 if (open) addon->dbs.erase(this);
                 CloseHandles();
 }
-#line 129 "./src/objects/database.lzz"
-Database::Database (v8::Isolate * isolate, Addon * addon, sqlite3 * db_handle, SynonymsTokenizerCreateContext * synonyms_context, StopwordsTokenizerCreateContext * stopwords_context, PhrasesTokenizerCreateContext * phrases_context, v8::Local <v8::Value> logger)
-#line 137 "./src/objects/database.lzz"
-  : node::ObjectWrap (), db_handle (db_handle), synonyms_context (synonyms_context), stopwords_context (stopwords_context), phrases_context (phrases_context), open (true), busy (false), safe_ints (false), unsafe_mode (false), was_js_error (false), has_logger (logger->IsFunction()), iterators (0), addon (addon), logger (isolate, logger), stmts (), backups ()
-#line 153 "./src/objects/database.lzz"
+#line 126 "./src/objects/database.lzz"
+Database::Database (v8::Isolate * isolate, Addon * addon, sqlite3 * db_handle, v8::Local <v8::Value> logger)
+#line 131 "./src/objects/database.lzz"
+  : node::ObjectWrap (), db_handle (db_handle), open (true), busy (false), safe_ints (false), unsafe_mode (false), was_js_error (false), has_logger (logger->IsFunction()), iterators (0), addon (addon), logger (isolate, logger), stmts (), backups ()
+#line 144 "./src/objects/database.lzz"
                           {
                 assert(db_handle != NULL);
                 addon->dbs.insert(this);
 }
-#line 158 "./src/objects/database.lzz"
+#line 149 "./src/objects/database.lzz"
 void Database::JS_new (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 158 "./src/objects/database.lzz"
+#line 149 "./src/objects/database.lzz"
                             {
                 assert(info.IsConstructCall());
                 if ( info . Length ( ) <= ( 0 ) || ! info [ 0 ] -> IsString ( ) ) return ThrowTypeError ( "Expected " "first" " argument to be " "a string" ) ; v8 :: Local < v8 :: String > filename = ( info [ 0 ] . As < v8 :: String > ( ) ) ;
@@ -447,9 +445,7 @@ void Database::JS_new (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                 v8 :: Isolate * isolate = info . GetIsolate ( ) ;
                 sqlite3* db_handle;
                 fts5_api* fts_api;
-                SynonymsTokenizerCreateContext* synonyms_context;
-                StopwordsTokenizerCreateContext* stopwords_context;
-                PhrasesTokenizerCreateContext* phrases_context;
+                char *error;
                 v8::String::Utf8Value utf8(isolate, filename);
                 int mask = readonly ? SQLITE_OPEN_READONLY
                         : must_exist ? SQLITE_OPEN_READWRITE
@@ -462,74 +458,36 @@ void Database::JS_new (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                         return;
                 }
 
-                fts_api = fts5_api_from_db(db_handle);
-                if (fts_api == NULL) {
-                        ThrowSqliteError(addon, "Unable to get FTS5 API", SQLITE_ERROR);
-                        int status = sqlite3_close(db_handle);
-                        assert(status == SQLITE_OK); ((void)status);
-                        return;
-                }
-
-                static fts5_tokenizer unicode_tokenizer = {
-                        .xCreate = unicode_tokenizer_create,
-                        .xDelete = unicode_tokenizer_delete,
-                        .xTokenize = unicode_tokenizer_tokenize
-                };
-
-
-                if (fts_api->xCreateTokenizer(fts_api, "unicode", NULL, &unicode_tokenizer, 0) != SQLITE_OK) {
+                if (sqlite3_unicode_init(db_handle, &error, NULL) != SQLITE_OK) {
                         ThrowSqliteError(addon, "Unable to create unicode tokenizer", SQLITE_ERROR);
                         int status = sqlite3_close(db_handle);
                         assert(status == SQLITE_OK); ((void)status);
                         return;
                 }
 
-                static fts5_tokenizer synonyms_tokenizer = {
-                        .xCreate = synonyms_tokenizer_create,
-                        .xDelete = synonyms_tokenizer_delete,
-                        .xTokenize = synonyms_tokenizer_tokenize
-                };
-
-
-                synonyms_context_create(db_handle, fts_api, &synonyms_context);
-                if (fts_api->xCreateTokenizer(fts_api, "synonyms", (void *)synonyms_context, &synonyms_tokenizer, 0) != SQLITE_OK) {
-                        ThrowSqliteError(addon, "Unable to create synonyms tokenizer", SQLITE_ERROR);
-                        synonyms_context_delete(synonyms_context);
-                        int status = sqlite3_close(db_handle);
-                        assert(status == SQLITE_OK); ((void)status);
-                        return;
-                }
-
-                static fts5_tokenizer stopwords_tokenizer = {
-                        .xCreate = stopwords_tokenizer_create,
-                        .xDelete = stopwords_tokenizer_delete,
-                        .xTokenize = stopwords_tokenizer_tokenize
-                };
-
-
-                stopwords_context_create(db_handle, fts_api, &stopwords_context);
-                if (fts_api->xCreateTokenizer(fts_api, "stopwords", (void *)stopwords_context, &stopwords_tokenizer, 0) != SQLITE_OK) {
+                if (sqlite3_stopwords_init(db_handle, &error, NULL) != SQLITE_OK) {
                         ThrowSqliteError(addon, "Unable to create stopwords tokenizer", SQLITE_ERROR);
-                        stopwords_context_delete(stopwords_context);
-                        synonyms_context_delete(synonyms_context);
                         int status = sqlite3_close(db_handle);
                         assert(status == SQLITE_OK); ((void)status);
                         return;
                 }
 
-                static fts5_tokenizer phrases_tokenizer = {
-                        .xCreate = phrases_tokenizer_create,
-                        .xDelete = phrases_tokenizer_delete,
-                        .xTokenize = phrases_tokenizer_tokenize
-                };
+                if (sqlite3_snowball_init(db_handle, &error, NULL) != SQLITE_OK) {
+                        ThrowSqliteError(addon, "Unable to create snowball tokenizer", SQLITE_ERROR);
+                        int status = sqlite3_close(db_handle);
+                        assert(status == SQLITE_OK); ((void)status);
+                        return;
+                }
 
+                if (sqlite3_synonyms_init(db_handle, &error, NULL) != SQLITE_OK) {
+                        ThrowSqliteError(addon, "Unable to create synonyms tokenizer", SQLITE_ERROR);
+                        int status = sqlite3_close(db_handle);
+                        assert(status == SQLITE_OK); ((void)status);
+                        return;
+                }
 
-                phrases_context_create(db_handle, fts_api, &phrases_context);
-                if (fts_api->xCreateTokenizer(fts_api, "phrases", (void *)phrases_context, &phrases_tokenizer, 0) != SQLITE_OK) {
+                if (sqlite3_phrases_init(db_handle, &error, NULL) != SQLITE_OK) {
                         ThrowSqliteError(addon, "Unable to create phrases tokenizer", SQLITE_ERROR);
-                        phrases_context_delete(phrases_context);
-                        stopwords_context_delete(stopwords_context);
-                        synonyms_context_delete(synonyms_context);
                         int status = sqlite3_close(db_handle);
                         assert(status == SQLITE_OK); ((void)status);
                         return;
@@ -552,7 +510,7 @@ void Database::JS_new (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                 }
 
                 v8 :: Local < v8 :: Context > ctx = isolate -> GetCurrentContext ( ) ;
-                Database* db = new Database(isolate, addon, db_handle, synonyms_context, stopwords_context, phrases_context, logger);
+                Database* db = new Database(isolate, addon, db_handle, logger);
                 db->Wrap(info.This());
                 SetFrozen(isolate, ctx, info.This(), addon->cs.memory, v8::Boolean::New(isolate, in_memory));
                 SetFrozen(isolate, ctx, info.This(), addon->cs.readonly, v8::Boolean::New(isolate, readonly));
@@ -560,9 +518,9 @@ void Database::JS_new (v8::FunctionCallbackInfo <v8 :: Value> const & info)
 
                 info.GetReturnValue().Set(info.This());
 }
-#line 287 "./src/objects/database.lzz"
+#line 238 "./src/objects/database.lzz"
 void Database::JS_prepare (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 287 "./src/objects/database.lzz"
+#line 238 "./src/objects/database.lzz"
                                 {
                 if ( info . Length ( ) <= ( 0 ) || ! info [ 0 ] -> IsString ( ) ) return ThrowTypeError ( "Expected " "first" " argument to be " "a string" ) ; v8 :: Local < v8 :: String > source = ( info [ 0 ] . As < v8 :: String > ( ) ) ;
                 if ( info . Length ( ) <= ( 1 ) || ! info [ 1 ] -> IsObject ( ) ) return ThrowTypeError ( "Expected " "second" " argument to be " "an object" ) ; v8 :: Local < v8 :: Object > database = ( info [ 1 ] . As < v8 :: Object > ( ) ) ;
@@ -578,9 +536,9 @@ void Database::JS_prepare (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                 addon->privileged_info = NULL;
                 if (!maybeStatement.IsEmpty()) info.GetReturnValue().Set(maybeStatement.ToLocalChecked());
 }
-#line 303 "./src/objects/database.lzz"
+#line 254 "./src/objects/database.lzz"
 void Database::JS_exec (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 303 "./src/objects/database.lzz"
+#line 254 "./src/objects/database.lzz"
                              {
                 Database* db = node :: ObjectWrap :: Unwrap <Database>(info.This());
                 if ( info . Length ( ) <= ( 0 ) || ! info [ 0 ] -> IsString ( ) ) return ThrowTypeError ( "Expected " "first" " argument to be " "a string" ) ; v8 :: Local < v8 :: String > source = ( info [ 0 ] . As < v8 :: String > ( ) ) ;
@@ -620,9 +578,9 @@ void Database::JS_exec (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                         db->ThrowDatabaseError();
                 }
 }
-#line 343 "./src/objects/database.lzz"
+#line 294 "./src/objects/database.lzz"
 void Database::JS_backup (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 343 "./src/objects/database.lzz"
+#line 294 "./src/objects/database.lzz"
                                {
                 if ( info . Length ( ) <= ( 0 ) || ! info [ 0 ] -> IsObject ( ) ) return ThrowTypeError ( "Expected " "first" " argument to be " "an object" ) ; v8 :: Local < v8 :: Object > database = ( info [ 0 ] . As < v8 :: Object > ( ) ) ;
                 if ( info . Length ( ) <= ( 1 ) || ! info [ 1 ] -> IsString ( ) ) return ThrowTypeError ( "Expected " "second" " argument to be " "a string" ) ; v8 :: Local < v8 :: String > attachedName = ( info [ 1 ] . As < v8 :: String > ( ) ) ;
@@ -640,9 +598,9 @@ void Database::JS_backup (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                 addon->privileged_info = NULL;
                 if (!maybeBackup.IsEmpty()) info.GetReturnValue().Set(maybeBackup.ToLocalChecked());
 }
-#line 361 "./src/objects/database.lzz"
+#line 312 "./src/objects/database.lzz"
 void Database::JS_serialize (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 361 "./src/objects/database.lzz"
+#line 312 "./src/objects/database.lzz"
                                   {
                 Database* db = node :: ObjectWrap :: Unwrap <Database>(info.This());
                 if ( info . Length ( ) <= ( 0 ) || ! info [ 0 ] -> IsString ( ) ) return ThrowTypeError ( "Expected " "first" " argument to be " "a string" ) ; v8 :: Local < v8 :: String > attachedName = ( info [ 0 ] . As < v8 :: String > ( ) ) ;
@@ -664,9 +622,9 @@ void Database::JS_serialize (v8::FunctionCallbackInfo <v8 :: Value> const & info
                         node::Buffer::New(isolate, reinterpret_cast<char*>(data), length, FreeSerialization, NULL).ToLocalChecked()
                 );
 }
-#line 383 "./src/objects/database.lzz"
+#line 334 "./src/objects/database.lzz"
 void Database::JS_function (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 383 "./src/objects/database.lzz"
+#line 334 "./src/objects/database.lzz"
                                  {
                 Database* db = node :: ObjectWrap :: Unwrap <Database>(info.This());
                 if ( info . Length ( ) <= ( 0 ) || ! info [ 0 ] -> IsFunction ( ) ) return ThrowTypeError ( "Expected " "first" " argument to be " "a function" ) ; v8 :: Local < v8 :: Function > fn = ( info [ 0 ] . As < v8 :: Function > ( ) ) ;
@@ -690,9 +648,9 @@ void Database::JS_function (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                         db->ThrowDatabaseError();
                 }
 }
-#line 407 "./src/objects/database.lzz"
+#line 358 "./src/objects/database.lzz"
 void Database::JS_aggregate (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 407 "./src/objects/database.lzz"
+#line 358 "./src/objects/database.lzz"
                                   {
                 Database* db = node :: ObjectWrap :: Unwrap <Database>(info.This());
                 if ( info . Length ( ) <= ( 0 ) ) return ThrowTypeError ( "Expected a " "first" " argument" ) ; v8 :: Local < v8 :: Value > start = info [ 0 ] ;
@@ -721,9 +679,9 @@ void Database::JS_aggregate (v8::FunctionCallbackInfo <v8 :: Value> const & info
                         db->ThrowDatabaseError();
                 }
 }
-#line 436 "./src/objects/database.lzz"
+#line 387 "./src/objects/database.lzz"
 void Database::JS_table (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 436 "./src/objects/database.lzz"
+#line 387 "./src/objects/database.lzz"
                               {
                 Database* db = node :: ObjectWrap :: Unwrap <Database>(info.This());
                 if ( info . Length ( ) <= ( 0 ) || ! info [ 0 ] -> IsFunction ( ) ) return ThrowTypeError ( "Expected " "first" " argument to be " "a function" ) ; v8 :: Local < v8 :: Function > factory = ( info [ 0 ] . As < v8 :: Function > ( ) ) ;
@@ -743,9 +701,9 @@ void Database::JS_table (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                 }
                 db->busy = false;
 }
-#line 456 "./src/objects/database.lzz"
+#line 407 "./src/objects/database.lzz"
 void Database::JS_loadExtension (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 456 "./src/objects/database.lzz"
+#line 407 "./src/objects/database.lzz"
                                       {
                 Database* db = node :: ObjectWrap :: Unwrap <Database>(info.This());
                 v8::Local<v8::String> entryPoint;
@@ -767,9 +725,9 @@ void Database::JS_loadExtension (v8::FunctionCallbackInfo <v8 :: Value> const & 
                 }
                 sqlite3_free(error);
 }
-#line 478 "./src/objects/database.lzz"
+#line 429 "./src/objects/database.lzz"
 void Database::JS_close (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 478 "./src/objects/database.lzz"
+#line 429 "./src/objects/database.lzz"
                               {
                 Database* db = node :: ObjectWrap :: Unwrap <Database>(info.This());
                 if (db->open) {
@@ -779,39 +737,39 @@ void Database::JS_close (v8::FunctionCallbackInfo <v8 :: Value> const & info)
                         db->CloseHandles();
                 }
 }
-#line 488 "./src/objects/database.lzz"
+#line 439 "./src/objects/database.lzz"
 void Database::JS_defaultSafeIntegers (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 488 "./src/objects/database.lzz"
+#line 439 "./src/objects/database.lzz"
                                             {
                 Database* db = node :: ObjectWrap :: Unwrap <Database>(info.This());
                 if (info.Length() == 0) db->safe_ints = true;
                 else { if ( info . Length ( ) <= ( 0 ) || ! info [ 0 ] -> IsBoolean ( ) ) return ThrowTypeError ( "Expected " "first" " argument to be " "a boolean" ) ; db -> safe_ints = ( info [ 0 ] . As < v8 :: Boolean > ( ) ) -> Value ( ) ; }
 }
-#line 494 "./src/objects/database.lzz"
+#line 445 "./src/objects/database.lzz"
 void Database::JS_unsafeMode (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 494 "./src/objects/database.lzz"
+#line 445 "./src/objects/database.lzz"
                                    {
                 Database* db = node :: ObjectWrap :: Unwrap <Database>(info.This());
                 if (info.Length() == 0) db->unsafe_mode = true;
                 else { if ( info . Length ( ) <= ( 0 ) || ! info [ 0 ] -> IsBoolean ( ) ) return ThrowTypeError ( "Expected " "first" " argument to be " "a boolean" ) ; db -> unsafe_mode = ( info [ 0 ] . As < v8 :: Boolean > ( ) ) -> Value ( ) ; }
                 sqlite3_db_config(db->db_handle, SQLITE_DBCONFIG_DEFENSIVE, static_cast<int>(!db->unsafe_mode), NULL);
 }
-#line 501 "./src/objects/database.lzz"
+#line 452 "./src/objects/database.lzz"
 void Database::JS_open (v8::Local <v8 :: String> _, v8::PropertyCallbackInfo <v8 :: Value> const & info)
-#line 501 "./src/objects/database.lzz"
+#line 452 "./src/objects/database.lzz"
                              {
                 info.GetReturnValue().Set( node :: ObjectWrap :: Unwrap <Database>(info.This())->open);
 }
-#line 505 "./src/objects/database.lzz"
+#line 456 "./src/objects/database.lzz"
 void Database::JS_inTransaction (v8::Local <v8 :: String> _, v8::PropertyCallbackInfo <v8 :: Value> const & info)
-#line 505 "./src/objects/database.lzz"
+#line 456 "./src/objects/database.lzz"
                                       {
                 Database* db = node :: ObjectWrap :: Unwrap <Database>(info.This());
                 info.GetReturnValue().Set(db->open && !static_cast<bool>(sqlite3_get_autocommit(db->db_handle)));
 }
-#line 510 "./src/objects/database.lzz"
+#line 461 "./src/objects/database.lzz"
 bool Database::Deserialize (v8::Local <v8::Object> buffer, Addon * addon, sqlite3 * db_handle, bool readonly)
-#line 510 "./src/objects/database.lzz"
+#line 461 "./src/objects/database.lzz"
                                                                                                                {
                 size_t length = node::Buffer::Length(buffer);
                 unsigned char* data = (unsigned char*)sqlite3_malloc64(length);
@@ -836,15 +794,15 @@ bool Database::Deserialize (v8::Local <v8::Object> buffer, Addon * addon, sqlite
 
                 return true;
 }
-#line 535 "./src/objects/database.lzz"
+#line 486 "./src/objects/database.lzz"
 void Database::FreeSerialization (char * data, void * _)
-#line 535 "./src/objects/database.lzz"
+#line 486 "./src/objects/database.lzz"
                                                            {
                 sqlite3_free(data);
 }
-#line 539 "./src/objects/database.lzz"
+#line 490 "./src/objects/database.lzz"
 int const Database::MAX_BUFFER_SIZE;
-#line 540 "./src/objects/database.lzz"
+#line 491 "./src/objects/database.lzz"
 int const Database::MAX_STRING_SIZE;
 #line 4 "./src/objects/statement.lzz"
 v8::Local <v8 :: Function> Statement::Init (v8::Isolate * isolate, v8::Local <v8 :: External> data)
@@ -2196,26 +2154,26 @@ Binder::Result Binder::BindArgs (v8::FunctionCallbackInfo <v8 :: Value> const & 
 
                 return { count, bound_object };
 }
-#line 45 "./src/better_sqlite3.lzz"
+#line 46 "./src/better_sqlite3.lzz"
 void Addon::JS_setErrorConstructor (v8::FunctionCallbackInfo <v8 :: Value> const & info)
-#line 45 "./src/better_sqlite3.lzz"
+#line 46 "./src/better_sqlite3.lzz"
                                             {
                 if ( info . Length ( ) <= ( 0 ) || ! info [ 0 ] -> IsFunction ( ) ) return ThrowTypeError ( "Expected " "first" " argument to be " "a function" ) ; v8 :: Local < v8 :: Function > SqliteError = ( info [ 0 ] . As < v8 :: Function > ( ) ) ;
                 static_cast < Addon * > ( info . Data ( ) . As < v8 :: External > ( ) -> Value ( ) ) ->SqliteError.Reset( info . GetIsolate ( ) , SqliteError);
 }
-#line 50 "./src/better_sqlite3.lzz"
+#line 51 "./src/better_sqlite3.lzz"
 void Addon::Cleanup (void * ptr)
-#line 50 "./src/better_sqlite3.lzz"
+#line 51 "./src/better_sqlite3.lzz"
                                        {
                 Addon* addon = static_cast<Addon*>(ptr);
                 for (Database* db : addon->dbs) db->CloseHandles();
                 addon->dbs.clear();
                 delete addon;
 }
-#line 57 "./src/better_sqlite3.lzz"
+#line 58 "./src/better_sqlite3.lzz"
 Addon::Addon (v8::Isolate * isolate)
-#line 57 "./src/better_sqlite3.lzz"
+#line 58 "./src/better_sqlite3.lzz"
   : privileged_info (NULL), next_id (0), cs (isolate)
-#line 60 "./src/better_sqlite3.lzz"
+#line 61 "./src/better_sqlite3.lzz"
                             {}
 #undef LZZ_INLINE
