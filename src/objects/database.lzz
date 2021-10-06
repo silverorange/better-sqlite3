@@ -160,7 +160,6 @@ private:
 		UseAddon;
 		UseIsolate;
 		sqlite3* db_handle;
-		fts5_api* fts_api;
 		char *error;
 		v8::String::Utf8Value utf8(isolate, filename);
 		int mask = readonly ? SQLITE_OPEN_READONLY
