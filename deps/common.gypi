@@ -4,7 +4,10 @@
 # ===
 
 {
-  'variables': { 'sqlite3%': '' },
+  'variables': {
+    'sqlite3%': '',
+    'LIBSTEMMER_VERSION': '2.1.0'
+  },
   'target_defaults': {
     'default_configuration': 'Release',
     'msvs_settings': {
