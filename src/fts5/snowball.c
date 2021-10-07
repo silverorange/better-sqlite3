@@ -1,5 +1,5 @@
 #include <libstemmer.h>
-#include <sqlite3ext.h>
+#include <sqlite3.h>
 #include <string.h>
 
 #include "debug.h"
@@ -200,8 +200,6 @@ __declspec(dllexport)
 
     int sqlite3_snowball_init(sqlite3 *pDb, char **pzError,
                               const sqlite3_api_routines *pApi) {
-
-  SQLITE_EXTENSION_INIT2(pApi);
 
   fts5_api *pFtsApi = fts5_api_from_db(pDb);
 
