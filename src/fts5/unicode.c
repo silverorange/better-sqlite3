@@ -1,5 +1,5 @@
 #include <assert.h>
-#include <sqlite3ext.h>
+#include <sqlite3.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -389,8 +389,6 @@ __declspec(dllexport)
 
     int sqlite3_unicode_init(sqlite3 *pDb, char **pzError,
                              const sqlite3_api_routines *pApi) {
-
-  SQLITE_EXTENSION_INIT2(pApi);
 
   fts5_api *pFtsApi = fts5_api_from_db(pDb);
 
