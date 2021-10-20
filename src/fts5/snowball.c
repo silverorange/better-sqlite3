@@ -38,6 +38,8 @@ static int is_valid_language(const char *name) {
 
 static int process_list_languages(const char **azArg, int nArg, int *nextArg,
                                   SnowballCallbackContext *snow) {
+  const char **azLanguages;
+
   int i;
   log_debug("[snowball] language is %s\n", azArg[0]);
   // find the position of the last language in the list
@@ -53,11 +55,13 @@ static int process_list_languages(const char **azArg, int nArg, int *nextArg,
   log_debug("[snowball] langauges %d, next arg %d\n", languages, i);
 
   if (languages == 0) {
-    azArg = (const char *[]){SNOWBALL_DEFAULT_LANGUAGE};
+    azLanguages = (const char *[]){SNOWBALL_DEFAULT_LANGUAGE};
     languages = 1;
+  } else {
+    azLanguages = azArg;
   }
 
-  log_debug("[snowball] language is %s\n", azArg[0]);
+  log_debug("[snowball] language is %s\n", azLanguages[0]);
 
   snow->stemmers = (struct sb_stemmer **)sqlite3_malloc(
       (languages + 1) * sizeof(struct sb_stemmer *));
@@ -70,7 +74,7 @@ static int process_list_languages(const char **azArg, int nArg, int *nextArg,
 
   for (i = 0; i < languages; i++) {
     // UTF-8 encoding is used by default.
-    snow->stemmers[i] = sb_stemmer_new(azArg[i], NULL);
+    snow->stemmers[i] = sb_stemmer_new(azLanguages[i], NULL);
     if (!snow->stemmers[i]) {
       return SQLITE_ERROR;
     }
