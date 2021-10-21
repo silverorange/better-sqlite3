@@ -1,8 +1,6 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
-#define SQLITE_TOKENIZER_DEBUG
-
 #ifdef SQLC_KEEP_ANDROID_LOG
 #define log_error(...) __android_log_print(ANDROID_LOG_VERBOSE, "sqlc-tokenizers", __VA_ARGS__)
 #define log_debug(...) __android_log_print(ANDROID_LOG_VERBOSE, "sqlc-tokenizers", __VA_ARGS__)
