@@ -8,7 +8,11 @@ const destFile = `${dest}/dist/libstemmer_c-${version}.tar.gz`;
   This builds the libstemmer source at version <$2> from the directory
   specified by <$3>.
 */
-execSync("make dist_libstemmer_c", { cwd: dest, shell: true, env: {} });
+execSync("make dist_libstemmer_c", {
+  cwd: dest,
+  shell: true,
+  env: { PATH: process.env.PATH },
+});
 
 tar
   .extract({
