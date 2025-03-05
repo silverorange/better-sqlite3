@@ -147,7 +147,7 @@ void SetPrototypeGetter(
 	v8::AccessorGetterCallback func
 ) {
 	v8::HandleScope scope(isolate);
-	recv->InstanceTemplate()->SetAccessor(
+	recv->InstanceTemplate()->SetAccessorProperty(
 		InternalizedFromLatin1(isolate, name),
 		func,
 		0,

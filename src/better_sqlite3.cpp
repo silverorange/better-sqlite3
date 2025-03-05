@@ -122,7 +122,7 @@ void SetPrototypeGetter (v8::Isolate * isolate, v8::Local <v8::External> data, v
 #line 148 "./src/util/macros.lzz"
   {
         v8::HandleScope scope(isolate);
-        recv->InstanceTemplate()->SetAccessor(
+        recv->InstanceTemplate()->SetAccessorProperty(
                 InternalizedFromLatin1(isolate, name),
                 func,
                 0,
