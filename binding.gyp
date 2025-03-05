@@ -14,7 +14,7 @@
       'sources': ['src/better_sqlite3.cpp'],
       'cflags_cc': ['-std=c++17'],
       'xcode_settings': {
-        'OTHER_CPLUSPLUSFLAGS': ['-std=c++17', '-stdlib=libc++'],
+        'OTHER_CPLUSPLUSFLAGS': ['-std=c++20', '-stdlib=libc++'],
       },
       'msvs_settings': {
         'VCCLCompilerTool': {
