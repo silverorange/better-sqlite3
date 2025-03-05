@@ -128,7 +128,6 @@ void SetPrototypeGetter (v8::Isolate * isolate, v8::Local <v8::External> data, v
                 0,
                 data,
                 v8::AccessControl::DEFAULT,
-                v8::PropertyAttribute::None
         );
 }
 #line 4 "./src/util/constants.lzz"
