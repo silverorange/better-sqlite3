@@ -82,6 +82,7 @@ Upgrading your `better-sqlite3` dependency can potentially introduce breaking ch
 
 * [`better-sqlite3` release notes](https://github.com/WiseLibs/better-sqlite3/releases)
 * [SQLite release history](https://www.sqlite.org/changes.html)
+* SilverOrange fork includes lzz binaries for MacOS from release 2.8.2 (https://github.com/driedfruit/lzz/releases/tag/v2.8.2) which should work on MacOS Sequoia, but you can manually generate binaries from source files for your OS if it doesn't work
 
 # Documentation
 
